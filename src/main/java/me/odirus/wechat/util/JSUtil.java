@@ -1,15 +1,10 @@
-package me.biezhi.weixin.util;
-
-import blade.kit.logging.Logger;
-import blade.kit.logging.LoggerFactory;
+package me.odirus.wechat.util;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
 public class JSUtil {
-    private static final Logger LOGGER = LoggerFactory.getLogger(JSUtil.class);
-
     private static String eval(String script) {
         ScriptEngineManager sem = new ScriptEngineManager();
         ScriptEngine se = sem.getEngineByName("javascript");
