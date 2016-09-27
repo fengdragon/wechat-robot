@@ -19,6 +19,11 @@ import static org.quartz.TriggerBuilder.newTrigger;
  */
 public class App {
 	public static void main(String[] args) {
+		App app = new App();
+		app.startGetCoupon();
+	}
+
+	private void startGetCoupon() {
 		try {
 			// Grab the Scheduler instance from the Factory
 			Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();

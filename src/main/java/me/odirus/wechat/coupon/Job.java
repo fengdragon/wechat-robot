@@ -17,6 +17,10 @@ public class Job implements org.quartz.Job {
 	public void execute(JobExecutionContext context) throws JobExecutionException {
 		Entrance entrance = new Entrance();
 		List<Coupon> couponList = entrance.getSmzdmCouponList();
-		entrance.saveInDB(couponList);
+		List<Coupon> newCouponList = entrance.saveInDB(couponList);
+
+		for (int i = 0; i < newCouponList.size(); i++) {
+			Message.send(newCouponList.get(i).toString());
+		}
 	}
 }

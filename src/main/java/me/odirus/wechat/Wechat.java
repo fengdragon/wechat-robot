@@ -466,28 +466,27 @@ public class Wechat {
 		}
 		return jsonObject;
 	}
-	
-	/**
-	 * 获取最新消息
-	 */
+
 	public void handleMsg(JSONObject data){
+
 		if(null == data){
 			return;
 		}
 		
 		JSONArray AddMsgList = data.getJSONArray("AddMsgList");
 		
-		for(int i=0,len=AddMsgList.size(); i<len; i++){
+		for (int i=0, len=AddMsgList.size(); i<len; i++) {
+
 			LOGGER.info("[*] 你有新的消息，请注意查收");
 			JSONObject msg = AddMsgList.getJSONObject(i);
 			int msgType = msg.getInt("MsgType", 0);
 			String name = getUserRemarkName(msg.getString("FromUserName"));
 			String content = msg.getString("Content");
-			
-			if(msgType == 51){
+
+			if(msgType == 51) {
 				LOGGER.info("[*] 成功截获微信初始化消息");
-			} else if(msgType == 1){
-				if(SpecialUsers.contains(msg.getString("ToUserName"))){
+			} else if(msgType == 1) {
+				if(SpecialUsers.contains(msg.getString("ToUserName"))) {
 					continue;
 				} else if(msg.getString("FromUserName").equals(User.getString("UserName"))){
 					continue;
@@ -495,33 +494,19 @@ public class Wechat {
 					String[] peopleContent = content.split(":<br/>");
 					LOGGER.info("|" + name + "| " + peopleContent[0] + ":\n" + peopleContent[1].replace("<br/>", "\n"));
 				} else {
-					LOGGER.info(name + ": " + content);
-					String ans = xiaodoubi(content);
-					webwxsendmsg(ans, msg.getString("FromUserName"));
-					LOGGER.info("自动回复 " + ans);
+
 				}
-			} else if(msgType == 3){
+			} else if(msgType == 3) {
 				webwxsendmsg("二蛋还不支持图片呢", msg.getString("FromUserName"));
-			} else if(msgType == 34){
+			} else if(msgType == 34) {
 				webwxsendmsg("二蛋还不支持语音呢", msg.getString("FromUserName"));
-			} else if(msgType == 42){
+			} else if(msgType == 42) {
 				LOGGER.info(name + " 给你发送了一张名片:");
 				LOGGER.info("=========================");
 			}
 		}
 	}
 	
-	private final String ITPK_API = "http://i.itpk.cn/api.php";
-	
-	// 这里的api_key和api_secret可以自己申请一个
-	private final String KEY = "?api_key=你的api_key&api_secret=你的api_secret";
-	
-	private String xiaodoubi(String msg) {
-		String url = ITPK_API + KEY + "&question=" + msg;
-		String result = HttpRequest.get(url).body();
-		return result;
-	}
-
 	private String getUserRemarkName(String id) {
 		String name = "这个人物名字未知";
 		for(int i=0, len=MemberList.size(); i<len; i++){
@@ -538,48 +523,35 @@ public class Wechat {
 		return name;
 	}
 	
-	public void listenMsgMode(){
+	public void listenMsgMode() {
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
 				LOGGER.info("[*] 进入消息监听模式 ...");
 				int playWeChat = 0;
-				while(true){
-					
+
+				while(true) {
 					int[] arr = syncCheck();
+					int retcode = arr[0];
+					int selector = arr[1];
 					
-					LOGGER.info("[*] retcode=%s,selector=%s", arr[0], arr[1]);
+					LOGGER.info("retcode=%s, selector=%s", retcode, selector);
 					
-					if(arr[0] == 1100){
-//						LOGGER.info("[*] 你在手机上登出了微信，债见");
-//						break;
+					if(retcode == 1100) {
 						arr = syncCheck();
 					}
 					
-					if(arr[0] == 0){
-						if(arr[1] == 2){
+					if(retcode == 0){
+						if(selector == 2) {
 							JSONObject data = webwxsync();
 							handleMsg(data);
-						} else if(arr[1] == 6){
+						} else if(selector == 6) {
 							JSONObject data = webwxsync();
 							handleMsg(data);
-						} else if(arr[1] == 7){
+						} else if(selector == 7){
 							playWeChat += 1;
 							LOGGER.info("[*] 你在手机上玩微信被我发现了 %d 次", playWeChat);
 							webwxsync();
-						} else if(arr[1] == 3){
-						} else if(arr[1] == 0){
-							try {
-								Thread.sleep(100);
-							} catch (InterruptedException e) {
-								e.printStackTrace();
-							}
-						}
-					} else {
-						try {
-							Thread.sleep(1000);
-						} catch (InterruptedException e) {
-							e.printStackTrace();
 						}
 					}
 				}
@@ -592,8 +564,9 @@ public class Wechat {
 
 		Wechat wechat = new Wechat();
 		String uuid = wechat.getUUID();
-		if(null == uuid){
-			LOGGER.info("[*] uuid获取失败");
+
+		if(null == uuid) {
+			LOGGER.info("uuid获取失败");
 		} else {
 			LOGGER.info("[*] 获取到uuid为 [%s]", wechat.uuid);
 			wechat.showQrCode();
@@ -602,7 +575,7 @@ public class Wechat {
 			}
 			wechat.closeQrWindow();
 			
-			if(!wechat.login()){
+			if(!wechat.login()) {
 				LOGGER.info("微信登录失败");
 				return;
 			}
@@ -628,8 +601,8 @@ public class Wechat {
 				return;
 			}
 			
-			LOGGER.info("[*] 获取联系人成功");
-			LOGGER.info("[*] 共有 %d 位联系人", wechat.ContactList.size());
+			LOGGER.info("获取联系人成功");
+			LOGGER.info("共有 %d 位联系人", wechat.ContactList.size());
 			
 			// 监听消息
 			wechat.listenMsgMode();

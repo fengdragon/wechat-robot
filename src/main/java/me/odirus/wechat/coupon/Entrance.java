@@ -14,7 +14,6 @@ public class Entrance {
 	public List<Coupon> getSmzdmCouponList() {
 		Smzdm smzdm = new Smzdm();
 		List<Coupon> couponList = smzdm.get();
-
 		return couponList;
 	}
 
