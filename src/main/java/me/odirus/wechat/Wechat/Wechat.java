@@ -4,6 +4,7 @@ import java.awt.EventQueue;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -13,10 +14,10 @@ import blade.kit.DateKit;
 import blade.kit.StringKit;
 import blade.kit.http.HttpRequest;
 import me.odirus.wechat.Singleton;
-import me.odirus.wechat.coupon.MapDB;
 import me.odirus.wechat.util.CookieUtil;
 import me.odirus.wechat.util.JSUtil;
 import me.odirus.wechat.util.Matchers;
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -221,8 +222,8 @@ public class Wechat {
 		try {
 			JSONObject jsonObject = new JSONObject(res);
 
-			//@todo 解析ChatSet 中的用户ID
 			String charSet = jsonObject.getString("ChatSet");
+			parseFromUserNameList(StringUtils.split(charSet, ","));
 
 			JSONObject BaseResponse = jsonObject.getJSONObject("BaseResponse");
 			if(null != BaseResponse){
@@ -293,6 +294,27 @@ public class Wechat {
 	}
 
 	/**
+	 * 从联系人UserName中解析用户信息
+	 *
+	 * @param userNameList
+	 */
+	private void parseFromUserNameList(String[] userNameList) {
+		List<String> unkownUserNameList = new ArrayList<String>();
+
+		for (int i = 0; i < userNameList.length; i++) {
+			if (userNameList[i].isEmpty()) {
+				continue;
+			}
+			WechatContact contact;
+			if ((contact = WechatUser.get(userNameList[i])) == null) {
+				unkownUserNameList.add(userNameList[i]);
+			}
+		}
+
+		getBatchContact(unkownUserNameList);
+	}
+
+	/**
 	 * 解析联系人信息
 	 *
 	 * 目前从 webwxinit 的 User 字段中解析登录用户的信息
@@ -303,16 +325,10 @@ public class Wechat {
 	 */
 	private void parseContact(boolean isLoginUser, JSONObject user) {
 		String userName = user.getString("UserName");
-		String userNick = user.getString("UserNick");
+		String nickName = user.getString("NickName");
 		String remarkName = user.getString("RemarkName");
-		WechatContact contact = new WechatContact(userName, userNick, remarkName);
-		MapDB.getWechatContactMap().put(userName, contact);
-		if (userNick.equals("滴滴领券分享")) {
-			WechatUser.setSpecifyUser(contact);
-		}
-		if (isLoginUser) {
-			WechatUser.setLoginUser(contact);
-		}
+		WechatContact contact = new WechatContact(userName, nickName, remarkName);
+		WechatUser.save(isLoginUser, contact);
 	}
 
 	/**
@@ -364,6 +380,52 @@ public class Wechat {
 		}
 
 		return false;
+	}
+
+	/**
+	 * 从远程批量获取用户信息
+	 *
+	 * @param userNameList
+	 * @return
+	 */
+	public void getBatchContact(List<String> userNameList) {
+		logger.info("执行从远程批量获取用户信息");
+
+		String url = WechatData.getBase_uri() + "/webwxbatchgetcontact?" + "type=ex" +
+			"&r=" + DateKit.getCurrentUnixTime() * 1000 +
+			"&lang=zh_CN" +
+			"&pass_ticket=" + WechatData.getPassTicket();
+
+		logger.info("请求地址 url = " + url);
+
+		JSONObject body = new JSONObject();
+		body.put("BaseRequest", WechatBaseRequest.get());
+		body.put("Count", userNameList.size());
+		JSONArray jsonArray = new JSONArray();
+		for (int i = 0; i < userNameList.size(); i++) {
+			JSONObject jsonObject = new JSONObject();
+			jsonObject.put("EncryChatRoomId", "");
+			jsonObject.put("UserName", userNameList.get(i));
+			jsonArray.put(jsonObject);
+		}
+		body.put("List", jsonArray);
+		HttpRequest request = HttpRequest.post(url)
+			.header("Content-Type", "application/json;charset=utf-8")
+			.header("Cookie", this.cookie)
+			.send(body.toString());
+		String res = request.body();
+		request.disconnect();
+
+		if(StringKit.isBlank(res)) {
+			logger.info("请求返回结果为空");
+		} else {
+			logger.info(String.format("获取到 %d 位联系人的信息", userNameList.size()));
+			JSONObject resJSONObject = new JSONObject(res);
+			JSONArray contactJSONArray = resJSONObject.getJSONArray("ContactList");
+			for (int i = 0; i < contactJSONArray.length(); i++) {
+				parseContact(false, contactJSONArray.getJSONObject(i));
+			}
+		}
 	}
 
 	/**
@@ -469,7 +531,7 @@ public class Wechat {
 		request.disconnect();
 		
 		if(StringKit.isBlank(res)) {
-			System.out.println("请求返回结果为空");
+			logger.info("请求返回结果为空");
 			return null;
 		}
 		
@@ -487,6 +549,11 @@ public class Wechat {
 				}
 				WechatData.setSyncKey(synckey.substring(1));
 			}
+		}
+		JSONArray addMsgList = jsonObject.getJSONArray("AddMsgList");
+		if (jsonObject.getInt("AddMsgCount") > 0 && null != addMsgList.getJSONObject(0)) {
+			String statusNotifyUserName = addMsgList.getJSONObject(0).getString("StatusNotifyUserName");
+			parseFromUserNameList(StringUtils.split(statusNotifyUserName, ","));
 		}
 		return jsonObject;
 	}
@@ -531,10 +598,13 @@ public class Wechat {
 	 * @return
 	 */
 	private String getUserDisplayName(String userName) {
-		WechatContact contact = (WechatContact)MapDB.getWechatContactMap().get(userName);
-		String userDisplayName = contact.getRemarkName().isEmpty() ? contact.getNickName() : contact.getRemarkName();
+		WechatContact contact = WechatUser.get(userName);
 
-		return userDisplayName;
+		if (null != contact) {
+			return contact.getRemarkName().isEmpty() ? contact.getNickName() : contact.getRemarkName();
+		} else {
+			return "查无此人";
+		}
 	}
 
 	/**

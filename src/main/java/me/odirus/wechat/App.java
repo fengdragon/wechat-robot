@@ -4,6 +4,9 @@ import me.odirus.wechat.Job.GetCouponJob;
 import me.odirus.wechat.Job.SendMessageJob;
 import me.odirus.wechat.Wechat.Wechat;
 import me.odirus.wechat.Wechat.WechatData;
+import me.odirus.wechat.Wechat.WechatUser;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.quartz.JobDetail;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
@@ -28,7 +31,7 @@ public class App {
 	public static void main(String[] args) {
 		App app = new App();
 		app.startWechat();
-		//app.startGetCoupon();
+		app.startGetCoupon();
 	}
 
 	private void startGetCoupon() {
@@ -112,7 +115,7 @@ public class App {
 				}
 
 				logger.info("获取联系人成功");
-				logger.info(String.format("一共获取到联系人 %d 位", wechat.getContactList().length()));
+				logger.info(String.format("一共获取到联系人 %d 位", WechatUser.getCount()));
 
 				// 监听消息
 				wechat.listenMsgMode();

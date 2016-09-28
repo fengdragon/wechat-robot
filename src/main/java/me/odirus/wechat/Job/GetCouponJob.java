@@ -3,6 +3,8 @@ package me.odirus.wechat.Job;
 import me.odirus.wechat.Message.IMessageSender;
 import me.odirus.wechat.Message.Message;
 import me.odirus.wechat.Singleton;
+import me.odirus.wechat.Wechat.WechatData;
+import me.odirus.wechat.Wechat.WechatUser;
 import me.odirus.wechat.coupon.Coupon;
 import me.odirus.wechat.coupon.Entrance;
 import org.quartz.JobExecutionContext;
@@ -35,7 +37,8 @@ public class GetCouponJob implements org.quartz.Job {
 		for (int i = 0; i < newCouponList.size(); i++) {
 			Coupon coupon = newCouponList.get(i);
 			String content = "京东图书优惠: " + coupon.getTitle() + ", " + coupon.getPromotion();
-			messageList.add(new Message("wechatId", content));//@todo 找到目标微信 ID
+			String userName = WechatUser.getSpecifyUser() == null ? "filehelper" : WechatUser.getSpecifyUser().getUserName();
+			messageList.add(new Message(userName, content));
 		}
 
 		return messageList;
