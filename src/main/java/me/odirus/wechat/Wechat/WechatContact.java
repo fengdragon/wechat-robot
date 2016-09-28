@@ -11,10 +11,12 @@ import java.io.Serializable;
 public class WechatContact implements Serializable {
 	private String userName;
 	private String nickName;
+	private String remarkName;
 
-	public WechatContact(String userName, String nickName) {
+	public WechatContact(String userName, String nickName, String remarkName) {
 		this.userName = userName;
 		this.nickName = nickName;
+		this.remarkName = remarkName;
 	}
 
 	public String getUserName() {
@@ -31,5 +33,13 @@ public class WechatContact implements Serializable {
 
 	public void setNickName(String nickName) {
 		this.nickName = nickName;
+	}
+
+	public String getRemarkName() {
+		return remarkName;
+	}
+
+	public void setRemarkName(String remarkName) {
+		this.remarkName = remarkName;
 	}
 }
