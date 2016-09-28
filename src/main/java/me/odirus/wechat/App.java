@@ -1,15 +1,16 @@
 package me.odirus.wechat;
 
-import blade.kit.logging.Logger;
-import blade.kit.logging.LoggerFactory;
 import me.odirus.wechat.Job.GetCouponJob;
 import me.odirus.wechat.Job.SendMessageJob;
 import me.odirus.wechat.Wechat.Wechat;
+import me.odirus.wechat.Wechat.WechatData;
 import org.quartz.JobDetail;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.Trigger;
 import org.quartz.impl.StdSchedulerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.quartz.JobBuilder.newJob;
 import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
@@ -22,12 +23,12 @@ import static org.quartz.TriggerBuilder.newTrigger;
  * Time: 14:31
  */
 public class App {
-	private static final Logger LOGGER = LoggerFactory.getLogger(App.class);
+	private static final Logger logger = LoggerFactory.getLogger(App.class);
 
 	public static void main(String[] args) {
 		App app = new App();
-		//app.startWechat();
-		app.startGetCoupon();
+		app.startWechat();
+		//app.startGetCoupon();
 	}
 
 	private void startGetCoupon() {
@@ -73,12 +74,11 @@ public class App {
 	private void startWechat() {
 		try {
 			Wechat wechat = Singleton.getWechat();
+			WechatData wechatData = Singleton.getWechatData();
 			String uuid = wechat.getUUID();
 
-			if (null == uuid) {
-				LOGGER.info("uuid获取失败");
-			} else {
-				LOGGER.info("[*] 获取到uuid为 [%s]", wechat.getUuid());
+			if (null != uuid) {
+				wechatData.setUUID(uuid);
 				wechat.showQrCode();
 				while (!wechat.waitForLogin().equals("200")) {
 					Thread.sleep(2000);
@@ -86,36 +86,38 @@ public class App {
 				wechat.closeQrWindow();
 
 				if (!wechat.login()) {
-					LOGGER.info("微信登录失败");
+					logger.info("微信登录失败");
 					return;
 				}
 
-				LOGGER.info("[*] 微信登录成功");
+				logger.info("微信登录成功");
 
 				if (!wechat.wxInit()) {
-					LOGGER.info("[*] 微信初始化失败");
+					logger.info("微信初始化失败");
 					return;
 				}
 
-				LOGGER.info("[*] 微信初始化成功");
+				logger.info("微信初始化成功");
 
 				if (!wechat.wxStatusNotify()) {
-					LOGGER.info("[*] 开启状态通知失败");
+					logger.info("开启状态通知失败");
 					return;
 				}
 
-				LOGGER.info("[*] 开启状态通知成功");
+				logger.info("开启状态通知成功");
 
 				if (!wechat.getContact()) {
-					LOGGER.info("[*] 获取联系人失败");
+					logger.info("获取联系人失败");
 					return;
 				}
 
-				LOGGER.info("获取联系人成功");
-				LOGGER.info("共有 %d 位联系人", wechat.getContactList().length());
+				logger.info("获取联系人成功");
+				logger.info(String.format("一共获取到联系人 %d 位", wechat.getContactList().length()));
 
 				// 监听消息
 				wechat.listenMsgMode();
+			} else {
+				logger.info("由于微信 UUID 获取失败，无法继续运行");
 			}
 		} catch (InterruptedException ie) {
 			ie.printStackTrace();
