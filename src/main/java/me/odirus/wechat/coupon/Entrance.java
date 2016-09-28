@@ -11,6 +11,7 @@ import java.util.List;
  * Time: 10:30
  */
 public class Entrance {
+	//return coupon list
 	public List<Coupon> getSmzdmCouponList() {
 		Smzdm smzdm = new Smzdm();
 		List<Coupon> couponList = smzdm.get();

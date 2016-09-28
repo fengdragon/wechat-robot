@@ -1,4 +1,4 @@
-package me.odirus.wechat;
+package me.odirus.wechat.Wechat;
 
 import java.awt.EventQueue;
 import java.awt.Graphics;

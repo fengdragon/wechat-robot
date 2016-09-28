@@ -1,9 +1,10 @@
-package me.odirus.wechat;
+package me.odirus.wechat.Wechat;
 
 import java.awt.EventQueue;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -12,14 +13,13 @@ import javax.swing.UIManager;
 import blade.kit.DateKit;
 import blade.kit.StringKit;
 import blade.kit.http.HttpRequest;
-import blade.kit.json.JSON;
-import blade.kit.json.JSONArray;
-import blade.kit.json.JSONObject;
 import blade.kit.logging.Logger;
 import blade.kit.logging.LoggerFactory;
 import me.odirus.wechat.util.CookieUtil;
 import me.odirus.wechat.util.JSUtil;
 import me.odirus.wechat.util.Matchers;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class Wechat {
 	
@@ -37,14 +37,35 @@ public class Wechat {
 	
 	// 微信联系人列表，可聊天的联系人列表
 	private JSONArray MemberList, ContactList;
+	// 微信联系人
+	private List<WechatContact> wechatContactList = new ArrayList<WechatContact>();
 	
 	// 微信特殊账号
 	private List<String> SpecialUsers = Arrays.asList("newsapp", "fmessage", "filehelper", "weibo", "qqmail", "fmessage", "tmessage", "qmessage", "qqsync", "floatbottle", "lbsapp", "shakeapp", "medianote", "qqfriend", "readerapp", "blogapp", "facebookapp", "masssendapp", "meishiapp", "feedsapp", "voip", "blogappweixin", "weixin", "brandsessionholder", "weixinreminder", "wxid_novlwrv3lqwv11", "gh_22b87fa7cb3c", "officialaccounts", "notification_messages", "wxid_novlwrv3lqwv11", "gh_22b87fa7cb3c", "wxitil", "userexperience_alarm", "notification_messages");
-	
+
+	//指定微信群ID
+	private String specifyWechatGroupId;
+
 	public Wechat() {
 		System.setProperty("jsse.enableSNIExtension", "false");
 	}
-	
+
+	public String getUuid() {
+		return uuid;
+	}
+
+	public JSONArray getContactList() {
+		return ContactList;
+	}
+
+	public List<WechatContact> getWechatContactList() {
+		return wechatContactList;
+	}
+
+	public String getSpecifyWechatGroupId() {
+		return specifyWechatGroupId;
+	}
+
 	/**
 	 * 获取UUID
 	 * @return
@@ -160,7 +181,7 @@ public class Wechat {
 		return code;
 	}
 	
-	private void closeQrWindow() {
+	public void closeQrWindow() {
 		qrCodeFrame.dispose();
 	}
 	
@@ -204,7 +225,7 @@ public class Wechat {
 	/**
 	 * 微信初始化
 	 */
-	public boolean wxInit(){
+	public boolean wxInit() {
 		
 		String url = this.base_uri + "/webwxinit?r=" + DateKit.getCurrentUnixTime() + "&pass_ticket=" + this.pass_ticket +
 				"&skey=" + this.skey;
@@ -220,17 +241,21 @@ public class Wechat {
 		LOGGER.info("[*] " + request);
 		String res = request.body();
 		request.disconnect();
-		
+
 		if(StringKit.isBlank(res)){
 			return false;
 		}
 		
 		try {
-			JSONObject jsonObject = JSON.parse(res).asObject();
-			if(null != jsonObject){
+			JSONObject jsonObject = new JSONObject(res);
+			if(null != jsonObject) {
+				String charSet = jsonObject.getString("ChatSet");
+
+				System.out.println(charSet);
+
 				JSONObject BaseResponse = jsonObject.getJSONObject("BaseResponse");
 				if(null != BaseResponse){
-					int ret = BaseResponse.getInt("Ret", -1);
+					int ret = BaseResponse.getInt("Ret");
 					if(ret == 0){
 						this.SyncKey = jsonObject.getJSONObject("SyncKey");
 						this.User = jsonObject.getJSONObject("User");
@@ -238,9 +263,9 @@ public class Wechat {
 						StringBuffer synckey = new StringBuffer();
 						
 						JSONArray list = SyncKey.getJSONArray("List");
-						for(int i=0, len=list.size(); i<len; i++){
+						for(int i=0, len=list.length(); i<len; i++){
 							JSONObject item = list.getJSONObject(i);
-							synckey.append("|" + item.getInt("Key", 0) + "_" + item.getInt("Val", 0));
+							synckey.append("|" + item.getInt("Key") + "_" + item.getInt("Val"));
 						}
 						
 						this.synckey = synckey.substring(1);
@@ -282,10 +307,10 @@ public class Wechat {
 		}
 		
 		try {
-			JSONObject jsonObject = JSON.parse(res).asObject();
+			JSONObject jsonObject = new JSONObject(res);
 			JSONObject BaseResponse = jsonObject.getJSONObject("BaseResponse");
 			if(null != BaseResponse){
-				int ret = BaseResponse.getInt("Ret", -1);
+				int ret = BaseResponse.getInt("Ret");
 				return ret == 0;
 			}
 		} catch (Exception e) {
@@ -312,23 +337,25 @@ public class Wechat {
 		String res = request.body();
 		request.disconnect();
 
+
+
 		if(StringKit.isBlank(res)){
 			return false;
 		}
 		
 		try {
-			JSONObject jsonObject = JSON.parse(res).asObject();
+			JSONObject jsonObject = new JSONObject(res);
 			JSONObject BaseResponse = jsonObject.getJSONObject("BaseResponse");
 			if(null != BaseResponse){
-				int ret = BaseResponse.getInt("Ret", -1);
+				int ret = BaseResponse.getInt("Ret");
 				if(ret == 0){
 					this.MemberList = jsonObject.getJSONArray("MemberList");
 					this.ContactList = new JSONArray();
 					if(null != MemberList){
-						for(int i=0, len=MemberList.size(); i<len; i++){
+						for(int i=0, len=MemberList.length(); i<len; i++){
 							JSONObject contact = this.MemberList.getJSONObject(i);
 							//公众号/服务号
-							if(contact.getInt("VerifyFlag", 0) == 8){
+							if(contact.getInt("VerifyFlag") == 8){
 								continue;
 							}
 							//特殊联系人
@@ -343,7 +370,7 @@ public class Wechat {
 							if(contact.getString("UserName").equals(this.User.getString("UserName"))){
 								continue;
 							}
-							ContactList.add(contact);
+							ContactList.put(contact);
 						}
 						return true;
 					}
@@ -353,7 +380,7 @@ public class Wechat {
 		}
 		return false;
 	}
-	
+
 	/**
 	 * 消息检查
 	 */
@@ -394,8 +421,10 @@ public class Wechat {
 		return arr;
 	}
 	
-	private void webwxsendmsg(String content, String to) {
-		
+	public void webwxsendmsg(String content, String to) {
+		System.out.println(content);
+
+
 		String url = this.base_uri + "/webwxsendmsg?lang=zh_CN&pass_ticket=" + this.pass_ticket;
 		
 		JSONObject body = new JSONObject();
@@ -448,18 +477,18 @@ public class Wechat {
 			return null;
 		}
 		
-		JSONObject jsonObject = JSON.parse(res).asObject();
+		JSONObject jsonObject = new JSONObject(res);
 		JSONObject BaseResponse = jsonObject.getJSONObject("BaseResponse");
 		if(null != BaseResponse){
-			int ret = BaseResponse.getInt("Ret", -1);
+			int ret = BaseResponse.getInt("Ret");
 			if(ret == 0){
 				this.SyncKey = jsonObject.getJSONObject("SyncKey");
 				
 				StringBuffer synckey = new StringBuffer();
 				JSONArray list = SyncKey.getJSONArray("List");
-				for(int i=0, len=list.size(); i<len; i++){
+				for(int i=0, len=list.length(); i<len; i++){
 					JSONObject item = list.getJSONObject(i);
-					synckey.append("|" + item.getInt("Key", 0) + "_" + item.getInt("Val", 0));
+					synckey.append("|" + item.getInt("Key") + "_" + item.getInt("Val"));
 				}
 				this.synckey = synckey.substring(1);
 			}
@@ -475,11 +504,11 @@ public class Wechat {
 		
 		JSONArray AddMsgList = data.getJSONArray("AddMsgList");
 		
-		for (int i=0, len=AddMsgList.size(); i<len; i++) {
+		for (int i=0, len=AddMsgList.length(); i<len; i++) {
 
 			LOGGER.info("[*] 你有新的消息，请注意查收");
 			JSONObject msg = AddMsgList.getJSONObject(i);
-			int msgType = msg.getInt("MsgType", 0);
+			int msgType = msg.getInt("MsgType");
 			String name = getUserRemarkName(msg.getString("FromUserName"));
 			String content = msg.getString("Content");
 
@@ -509,7 +538,7 @@ public class Wechat {
 	
 	private String getUserRemarkName(String id) {
 		String name = "这个人物名字未知";
-		for(int i=0, len=MemberList.size(); i<len; i++){
+		for(int i=0, len=MemberList.length(); i<len; i++){
 			JSONObject member = this.MemberList.getJSONObject(i);
 			if(member.getString("UserName").equals(id)){
 				if(StringKit.isNotBlank(member.getString("RemarkName"))){
@@ -535,7 +564,7 @@ public class Wechat {
 					int retcode = arr[0];
 					int selector = arr[1];
 					
-					LOGGER.info("retcode=%s, selector=%s", retcode, selector);
+					LOGGER.info("retcode=%d, selector=%d", retcode, selector);
 					
 					if(retcode == 1100) {
 						arr = syncCheck();
@@ -558,55 +587,4 @@ public class Wechat {
 			}
 		}, "listenMsgMode").start();
 	}
-	
-	public static void main(String[] args) throws InterruptedException {
-		System.out.println(JSUtil.getPushServer("wx.qq.com"));
-
-		Wechat wechat = new Wechat();
-		String uuid = wechat.getUUID();
-
-		if(null == uuid) {
-			LOGGER.info("uuid获取失败");
-		} else {
-			LOGGER.info("[*] 获取到uuid为 [%s]", wechat.uuid);
-			wechat.showQrCode();
-			while(!wechat.waitForLogin().equals("200")){
-				Thread.sleep(2000);
-			}
-			wechat.closeQrWindow();
-			
-			if(!wechat.login()) {
-				LOGGER.info("微信登录失败");
-				return;
-			}
-			
-			LOGGER.info("[*] 微信登录成功");
-			
-			if(!wechat.wxInit()){
-				LOGGER.info("[*] 微信初始化失败");
-				return;
-			}
-			
-			LOGGER.info("[*] 微信初始化成功");
-			
-			if(!wechat.wxStatusNotify()){
-				LOGGER.info("[*] 开启状态通知失败");
-				return;
-			}
-			
-			LOGGER.info("[*] 开启状态通知成功");
-			
-			if(!wechat.getContact()){
-				LOGGER.info("[*] 获取联系人失败");
-				return;
-			}
-			
-			LOGGER.info("获取联系人成功");
-			LOGGER.info("共有 %d 位联系人", wechat.ContactList.size());
-			
-			// 监听消息
-			wechat.listenMsgMode();
-		}
-	}
-	
 }

@@ -2,3 +2,4 @@
 /target/
 *.iml
 temp.jpg
+logs/
