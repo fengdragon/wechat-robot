@@ -1,7 +1,6 @@
 package me.odirus.wechat.Message;
 
 import me.odirus.wechat.Singleton;
-import me.odirus.wechat.Wechat.Wechat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +31,8 @@ public class MessageSenderWechat implements IMessageSender {
 	public void send() {
 		Message message = messageQueue.poll();
 		if (null != message) {
-			Singleton.getWechat().webWxSendMsg(message.getContent(), message.getReceiver());
+			System.out.println(message.getContent());
+			//Singleton.getWechat().webWxSendMsg(message.getContent(), message.getReceiver());
 		}
 	}
 }

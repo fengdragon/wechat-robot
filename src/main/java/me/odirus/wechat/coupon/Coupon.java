@@ -16,6 +16,7 @@ public class Coupon implements Serializable {
 	private String promotion;
 	private CouponProvider couponProvider;
 	private Timestamp timestamp;
+	private String link;
 
 	public String getId() {
 		return id;
@@ -55,6 +56,14 @@ public class Coupon implements Serializable {
 
 	public void setTimestamp(Timestamp timestamp) {
 		this.timestamp = timestamp;
+	}
+
+	public String getLink() {
+		return link;
+	}
+
+	public void setLink(String link) {
+		this.link = link;
 	}
 
 	@Override

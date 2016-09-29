@@ -24,10 +24,10 @@ public class Entrance {
 		Iterator<Coupon> couponIterator = couponList.iterator();
 		while(couponIterator.hasNext()) {
 			Coupon coupon = couponIterator.next();
-			if (MapDB.getMap().get(coupon.getId()) == null) {
+			if (MapDB.getCouponMap().get(coupon.getId()) == null) {
 				resList.add(coupon);
 			}
-			MapDB.getMap().put(coupon.getId(), coupon);
+			MapDB.getCouponMap().put(coupon.getId(), coupon);
 		}
 
 		return resList;

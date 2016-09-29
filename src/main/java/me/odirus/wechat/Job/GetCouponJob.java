@@ -36,11 +36,15 @@ public class GetCouponJob implements org.quartz.Job {
 
 		for (int i = 0; i < newCouponList.size(); i++) {
 			Coupon coupon = newCouponList.get(i);
-			String content = "京东图书优惠: " + coupon.getTitle() + ", " + coupon.getPromotion();
+			String content = "优惠信息:\n" +
+				"标题  : " + coupon.getTitle() + "\n" +
+				"优惠  : " + coupon.getPromotion() + "\n" +
+				"访问链接: " + coupon.getLink() + "\n" +
+				"信息来源: " + coupon.getCouponProvider().getDescribe();
+
 			String userName = WechatUser.getSpecifyUser() == null ? "filehelper" : WechatUser.getSpecifyUser().getUserName();
-			if (coupon.getTitle().contains("促销活动")) {
-				messageList.add(new Message(userName, content));
-			}
+
+			messageList.add(new Message(userName, content));
 		}
 
 		return messageList;

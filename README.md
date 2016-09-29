@@ -4,6 +4,10 @@ wechat-robot是基于微信网页版协议开发的普通微信号机器人程�
 
 [微信协议分析](doc/protocol.md)
 
+# 源码说明
+
+webchat-robot 是基于 biezhi 的源码上进行改进，原 [repo](https://github.com/biezhi/wechat-robot)，原 [README.md](README.old.md)
+
 ## 使用
 
 这是一个Maven工程，如果你想在普通项目中运行该程序，需要下载 [blade-kit.jar](http://search.maven.org/remotecontent?filepath=com/bladejava/blade-kit/1.2.9-alpha/blade-kit-1.2.9-alpha.jar)

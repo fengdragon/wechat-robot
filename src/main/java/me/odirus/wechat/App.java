@@ -54,7 +54,7 @@ public class App {
 				.withIdentity("trigger1", "group1")
 				.startNow()
 				.withSchedule(simpleSchedule()
-					.withIntervalInSeconds(30)
+					.withIntervalInSeconds(60)
 					.repeatForever())
 				.build();
 			Trigger triggerGroup2 = newTrigger()

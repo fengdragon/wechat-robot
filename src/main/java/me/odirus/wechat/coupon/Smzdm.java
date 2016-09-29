@@ -24,30 +24,64 @@ import java.util.regex.Pattern;
  * Time: 11:18
  */
 public class Smzdm {
-	private static final String url = "http://www.smzdm.com/fenlei/tushuyinxiang/h1c4s183f0t0p1/";
+	private static Map<String, String[]> dataSource = new HashMap<String, String[]>();//<url, keywordList>
 	private static final String defaultHeaderUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.116 Safari/537.36";
 	private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
 	private static final SimpleDateFormat sdfForPostTime = new SimpleDateFormat("MM-dd HH:mm");
 
 	public Smzdm() {
 		Unirest.setDefaultHeader("User-Agent", defaultHeaderUserAgent);
+		String urlA = "http://www.smzdm.com/fenlei/tushuyinxiang/h1c4s183f0t0p1/";
+		String[] keywordListA = new String[]{"促销活动"};
+		dataSource.put(urlA, keywordListA);
+		String urlB = "http://www.smzdm.com/fenlei/liangyoutiaowei/h1c1s0f0t0p1/";
+		String[] keywordListB = new String[]{"米", "油"};
+		dataSource.put(urlB, keywordListB);
 	}
 
 	public List<Coupon> get() {
-		List<Coupon> couponList = new ArrayList<Coupon>();
+		List<Coupon> resCouponList = new ArrayList<Coupon>();
 
-		try {
-			String contents = getHtml();
-			Document doc = parseHtml(contents);
-			couponList = getCouponList(doc);
-		} catch (Exception e) {
-			e.printStackTrace();
+		Iterator<String> iterator = dataSource.keySet().iterator();
+		while (iterator.hasNext()) {
+			String url = iterator.next();
+			String[] keywordList = dataSource.get(url);
+
+			try {
+				List<Coupon> couponList = new ArrayList<Coupon>();
+				String contents = getHtml(url);
+				Document doc = parseHtml(contents);
+				couponList = getCouponList(doc);
+				couponList = filter(couponList, keywordList);
+				resCouponList.addAll(couponList);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
 
-		return couponList;
+		return resCouponList;
 	}
 
-	private String getHtml() throws UnirestException {
+	private List<Coupon> filter(List<Coupon> couponList, String[] keywordList) {
+		List<Coupon> resCouponList = new ArrayList<Coupon>();
+
+		for (int i = 0; i < couponList.size(); i++) {
+			Coupon coupon = couponList.get(i);
+			boolean containKeyword = false;
+			for (int j = 0; j < keywordList.length; j++) {
+				if (coupon.getTitle().contains(keywordList[j])) {
+					containKeyword = true;
+				}
+			}
+			if (containKeyword) {
+				resCouponList.add(coupon);
+			}
+		}
+
+		return resCouponList;
+	}
+
+	private String getHtml(String url) throws UnirestException {
 		GetRequest getRequest = Unirest.get(url);
 		HttpResponse<String> httpResponse = getRequest.asString();
 
@@ -95,6 +129,8 @@ public class Smzdm {
 				.textNodes();
 			String timeStr = timeContainerNodeList.get(0).getWholeText().trim();
 			coupon.setTimestamp(new Timestamp(parseTimeStr(timeStr)));
+
+			coupon.setLink(link);
 
 			couponList.add(coupon);
 		}

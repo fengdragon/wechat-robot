@@ -597,7 +597,6 @@ public class Wechat {
 					logger.info("|" + displayName + "| " + peopleContent[0] + ":\n" + peopleContent[1].replace("<br/>", "\n"));
 				}
 			} else if (msgType == 49) {
-				//@todo 删除注释
 				logger.info("xml content:\n" + StringEscapeUtils.unescapeXml(content));
 
 				if (displayName.equals("滴滴出行")) {
@@ -618,10 +617,14 @@ public class Wechat {
 				if (!xml.isEmpty()) {
 					Document doc = Jsoup.parse(xml, "", Parser.xmlParser());
 					Elements elements = doc.select("appname");
-					if (elements.size() == 1 && elements.get(0).text().equals("滴滴出行")) {
-						String url = doc.select("url").get(0).text();
-
-						Singleton.getMessageSender().add(new Message(WechatUser.getSpecifyUser().getUserName(), "滴滴优惠券: \n" + url));
+					if (elements.size() == 1) {
+						if (elements.get(0).text().equals("滴滴出行")) {
+							String url = doc.select("url").get(0).text();
+							Singleton.getMessageSender().add(new Message(WechatUser.getSpecifyUser().getUserName(), "滴滴优惠券: \n" + url));
+						} else if (elements.get(0).text().equals("饿了么")) {
+							String url = doc.select("url").get(0).text();
+							Singleton.getMessageSender().add(new Message(WechatUser.getSpecifyUser().getUserName(), "饿了么优惠券: \n" + url));
+						}
 					}
 				}
 			}
