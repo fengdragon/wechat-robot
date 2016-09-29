@@ -31,8 +31,7 @@ public class MessageSenderWechat implements IMessageSender {
 	public void send() {
 		Message message = messageQueue.poll();
 		if (null != message) {
-			System.out.println(message.getContent());
-			//Singleton.getWechat().webWxSendMsg(message.getContent(), message.getReceiver());
+			Singleton.getWechat().webWxSendMsg(message.getContent(), message.getReceiver());
 		}
 	}
 }
