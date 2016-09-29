@@ -1,6 +1,8 @@
 package me.odirus.wechat.Wechat;
 
 import me.odirus.wechat.coupon.MapDB;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * User: huangjing
@@ -9,6 +11,9 @@ import me.odirus.wechat.coupon.MapDB;
  * Time: 14:58
  */
 public class WechatUser {
+	private static final Logger logger = LoggerFactory.getLogger(WechatUser.class);
+	private static final String specifyUserNickName = "优惠自动分享群1";
+
 	private static WechatContact loginUser;
 	private static WechatContact specifyUser;
 
@@ -28,7 +33,8 @@ public class WechatUser {
 	 */
 	public static void save(boolean isLoginUser, WechatContact contact) {
 		MapDB.getWechatContactMap().put(contact.getUserName(), contact);
-		if (contact.getNickName().equals("滴滴领券分享")) {
+		if (contact.getNickName().equals(specifyUserNickName)) {
+			logger.info("目标用户信息已经被记录, nickName=" + specifyUserNickName + "; userName=" + contact.getUserName());
 			specifyUser = contact;
 		}
 		if (isLoginUser) {

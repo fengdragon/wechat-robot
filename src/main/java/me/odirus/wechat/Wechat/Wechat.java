@@ -13,15 +13,23 @@ import javax.swing.UIManager;
 import blade.kit.DateKit;
 import blade.kit.StringKit;
 import blade.kit.http.HttpRequest;
+import me.odirus.wechat.Message.Message;
 import me.odirus.wechat.Singleton;
 import me.odirus.wechat.util.CookieUtil;
 import me.odirus.wechat.util.JSUtil;
 import me.odirus.wechat.util.Matchers;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.parser.Parser;
+import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
 
 public class Wechat {
 	private static final Logger logger = LoggerFactory.getLogger(Wechat.class);
@@ -573,7 +581,8 @@ public class Wechat {
 			logger.info("你有新的消息，请注意查收");
 			JSONObject msg = AddMsgList.getJSONObject(i);
 			int msgType = msg.getInt("MsgType");
-			String name = getUserDisplayName(msg.getString("FromUserName"));
+			String fromUserName = msg.getString("FromUserName");
+			String displayName = getUserDisplayName(fromUserName);
 			String content = msg.getString("Content");
 
 			if(msgType == 51) {
@@ -585,7 +594,35 @@ public class Wechat {
 					continue;
 				} else if (msg.getString("ToUserName").contains("@@")) {
 					String[] peopleContent = content.split(":<br/>");
-					logger.info("|" + name + "| " + peopleContent[0] + ":\n" + peopleContent[1].replace("<br/>", "\n"));
+					logger.info("|" + displayName + "| " + peopleContent[0] + ":\n" + peopleContent[1].replace("<br/>", "\n"));
+				}
+			} else if (msgType == 49) {
+				//@todo 删除注释
+				logger.info("xml content:\n" + StringEscapeUtils.unescapeXml(content));
+
+				if (displayName.equals("滴滴出行")) {
+					continue;//忽略领取红包之后的提醒消息
+				}
+
+				//处理滴滴分享情况
+				String xml = "";
+				String[] shareContent = content.split(":<br/>");
+
+				if (shareContent.length == 2) {
+					xml = StringEscapeUtils.unescapeXml(shareContent[1]).replace("<br/>", "");
+				} else if (shareContent.length == 1) {
+					//如果是发送到文件助手，有没有那个用户ID在前面
+					xml = StringEscapeUtils.unescapeXml(shareContent[0]).replace("<br/>", "");
+				}
+
+				if (!xml.isEmpty()) {
+					Document doc = Jsoup.parse(xml, "", Parser.xmlParser());
+					Elements elements = doc.select("appname");
+					if (elements.size() == 1 && elements.get(0).text().equals("滴滴出行")) {
+						String url = doc.select("url").get(0).text();
+
+						Singleton.getMessageSender().add(new Message(WechatUser.getSpecifyUser().getUserName(), "滴滴优惠券: \n" + url));
+					}
 				}
 			}
 		}
@@ -644,6 +681,12 @@ public class Wechat {
 							playWeChat += 1;
 							webWxSync();
 						}
+					}
+
+					try {
+						Thread.sleep(3 * 1000);
+					} catch (InterruptedException ie) {
+						ie.printStackTrace();
 					}
 				}
 

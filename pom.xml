@@ -28,7 +28,7 @@
 			<version>1.4.9</version>
 		</dependency>
 
-		<!-- parse Html -->
+		<!-- parse Html XML -->
 		<dependency>
 			<groupId>org.jsoup</groupId>
 			<artifactId>jsoup</artifactId>

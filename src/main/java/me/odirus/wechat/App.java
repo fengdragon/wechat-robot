@@ -61,7 +61,7 @@ public class App {
 				.withIdentity("trigger2", "group2")
 				.startNow()
 				.withSchedule(simpleSchedule()
-					.withIntervalInSeconds(10)
+					.withIntervalInSeconds(3)
 					.repeatForever())
 				.build();
 
