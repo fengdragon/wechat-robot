@@ -37,6 +37,9 @@ public class Smzdm {
 		String urlB = "http://www.smzdm.com/fenlei/liangyoutiaowei/h1c1s0f0t0p1/";
 		String[] keywordListB = new String[]{"米", "油"};
 		dataSource.put(urlB, keywordListB);
+		String urlC = "http://3c.smzdm.com/h1c1s0f0t0p1/";
+		String[] keywordListC = new String[]{"电", "机器人", "洗衣机", "冰箱", "电视", "空气净化", "煲", "锅"};
+		dataSource.put(urlC, keywordListC);
 	}
 
 	public List<Coupon> get() {
@@ -48,7 +51,7 @@ public class Smzdm {
 			String[] keywordList = dataSource.get(url);
 
 			try {
-				List<Coupon> couponList = new ArrayList<Coupon>();
+				List<Coupon> couponList;
 				String contents = getHtml(url);
 				Document doc = parseHtml(contents);
 				couponList = getCouponList(doc);
